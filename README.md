@@ -1,29 +1,32 @@
 # Docker Selenium News Summarization API
 
-## 1. Student news-source assignment
+## 1. Student News-Source Assignment
 
-Registration number: **FA23-BDS-009**
+* **Registration Number:** FA23-BDS-009
+* **Last Three Digits:** 009 → 9
+* **Assignment Formula:** (9 % 20) + 1 = 10
+* **Assigned News Source:** NPR (Serial Number 10)
+* **Search Domain:** npr.org
 
-Last three digits: `009` → 9
+## 2. Project Overview
 
-Formula: `(9 % 20) + 1 = 10`
+This project is a Dockerized News Summarization REST API developed using Python, Flask, Selenium, and Google Chrome.
 
-Assigned source: **NPR** (serial number 10)  
-Search domain: `npr.org`
+The application searches NPR for a user-provided keyword, opens the first relevant article, extracts its main text, and generates a short extractive summary.
 
-## 2. What this project does
+### How It Works
 
-0. The home page `/` is a web page that shows the registration number **FA23-BDS-009**.
-1. Receives a keyword at `GET /get`.
-2. Uses Selenium + Google Chrome to search Bing (DuckDuckGo as fallback) for `site:npr.org <keyword>`; redirect links are decoded to the real URL.
-3. Selects the first search result hosted on NPR.
-4. Opens the article and extracts its readable text using Trafilatura.
-5. Creates a short extractive summary using a local Python summarization module.
-6. Returns the required JSON response.
+1. The home page (`/`) displays the student's registration number: **FA23-BDS-009**.
+2. The API receives a keyword through the `GET /get` endpoint.
+3. Selenium launches Google Chrome in headless mode and searches NPR's internal search page.
+4. The scraper selects the first relevant NPR article.
+5. Trafilatura extracts the readable article content.
+6. A custom local Python summarizer selects important sentences.
+7. Flask returns the article URL and summary in JSON format.
 
-The summarizer is extractive: it selects important sentences from the article. It does not require an API key or paid AI service.
+The summarizer works locally and does not require an external AI API key or paid service.
 
-## 3. Project structure
+## 3. Project Structure
 
 ```text
 news_selenium_assignment/
@@ -35,122 +38,192 @@ news_selenium_assignment/
 ├── .dockerignore
 ├── README.md
 └── tests/
+    ├── test_api_and_scraper.py
     └── test_summarizer.py
 ```
 
-## 4. Build and run locally with Docker
+## 4. Technologies Used
 
-Install Docker Desktop (Windows/macOS) or Docker Engine (Linux), then open a terminal in this project folder.
+* **Python 3.12:** Main programming language.
+* **Flask:** REST API development.
+* **Selenium 4:** Browser automation and news searching.
+* **Google Chrome:** Headless browser.
+* **ChromeDriver:** Connects Selenium with Google Chrome.
+* **Trafilatura:** Extracts readable article text.
+* **Custom Extractive Summarizer:** Selects important sentences from the article.
+* **Docker:** Containerization and deployment.
 
-Build the image:
+## 5. API Specification
 
-```bash
-docker build -t YOUR_DOCKERHUB_USERNAME/npr-news-api:v1 .
-```
+| Property        | Details   |
+| --------------- | --------- |
+| API Endpoint    | `/get`    |
+| HTTP Method     | GET       |
+| Port            | 7000      |
+| Query Parameter | `keyword` |
+| News Source     | NPR       |
+| Search Domain   | npr.org   |
 
-Run the container:
+### Successful Response
 
-```bash
-docker run -d --name npr-news-api -p 7000:7000 YOUR_DOCKERHUB_USERNAME/npr-news-api:v1
-```
+The API returns the following JSON fields:
 
-Check the service:
+* `registration`
+* `newssource`
+* `keyword`
+* `url`
+* `summary`
 
-```bash
-curl http://localhost:7000/health
-```
-
-Expected:
-
-```json
-{"status":"ok"}
-```
-
-Call the API:
-
-```bash
-curl "http://localhost:7000/get?keyword=artificial%20intelligence"
-```
-
-The API returns:
+Example:
 
 ```json
 {
   "registration": "FA23-BDS-009",
   "newssource": "NPR",
-  "keyword": "artificial intelligence",
+  "keyword": "technology",
   "url": "https://www.npr.org/...",
-  "summary": "..."
+  "summary": "Article summary appears here."
 }
 ```
 
-The exact article URL and summary depend on the search results at request time.
+The actual article URL and summary depend on the search results available when the API is called.
 
-To view container logs:
+### Error Handling
+
+* Missing keyword: HTTP 400
+* Search or article extraction failure: HTTP 502
+
+## 6. Build and Run Locally with Docker
+
+Make sure Docker is installed and running.
+
+### Build the Docker Image
+
+```bash
+docker build -t fatimawaseemdevops/npr-news-api:v1 .
+```
+
+### Run the Container
+
+```bash
+docker run -d --name npr-news-api -p 7000:7000 fatimawaseemdevops/npr-news-api:v1
+```
+
+### Open the Landing Page
+
+```text
+http://localhost:7000/
+```
+
+The landing page displays the registration number **FA23-BDS-009**.
+
+### Test the API
+
+```bash
+curl "http://localhost:7000/get?keyword=technology"
+```
+
+### View Container Logs
 
 ```bash
 docker logs -f npr-news-api
 ```
 
-To stop and remove the container:
+### Stop and Remove the Container
 
 ```bash
 docker stop npr-news-api
 docker rm npr-news-api
 ```
 
-## 5. Push the image to Docker Hub
+## 7. Docker Hub Deployment
 
-First create a public repository named `npr-news-api` on Docker Hub. Then:
+The Docker image is published on Docker Hub.
 
-```bash
-docker login
-docker push YOUR_DOCKERHUB_USERNAME/npr-news-api:v1
-```
+* **Docker Hub Username:** fatimawaseemdevops
+* **Repository:** npr-news-api
+* **Image Tag:** v1
 
-Replace `YOUR_DOCKERHUB_USERNAME` with your actual Docker Hub username. Submit the full image name, including `:v1`.
-
-## 6. Deploy on an Ubuntu EC2 instance (if required)
-
-Install Docker on the Ubuntu VM, then copy or clone this project and run:
-
-```bash
-docker build -t YOUR_DOCKERHUB_USERNAME/npr-news-api:v1 .
-docker run -d --restart unless-stopped --name npr-news-api -p 7000:7000 YOUR_DOCKERHUB_USERNAME/npr-news-api:v1
-```
-
-In the EC2 security group, allow inbound **TCP port 7000** from the source range required by your instructor. For a public demonstration, use your instance public IP:
+Full image name:
 
 ```text
-http://YOUR_EC2_PUBLIC_IP:7000/get?keyword=artificial%20intelligence
+fatimawaseemdevops/npr-news-api:v1
 ```
 
-Do not use a private `172.31.x.x` address from outside the EC2 network.
+Pull the image:
 
-## 7. API specification
+```bash
+docker pull fatimawaseemdevops/npr-news-api:v1
+```
 
-- Endpoint: `/get`
-- Method: `GET`
-- Port: `7000`
-- Required query parameter: `keyword`
-- Successful response fields: `registration`, `newssource`, `keyword`, `url`, `summary`
-- Missing keyword: HTTP 400
-- Search/extraction failure: HTTP 502
+Run the downloaded image:
 
-## 8. Technology choices
+```bash
+docker run -d --name npr-news-api -p 7000:7000 fatimawaseemdevops/npr-news-api:v1
+```
 
-- **Python 3.12:** application and Selenium code (language used for Selenium: **Python**).
-- **Google Chrome:** browser used in headless mode inside the container.
-- **Selenium 4:** browser automation.
-- **ChromeDriver:** downloaded during the Docker build to match the installed Google Chrome version.
-- **Trafilatura:** extracts the main article text from the web page.
-- **Flask:** exposes the REST API.
-- **Custom extractive summarizer:** ranks and selects important sentences locally.
+## 8. Deployment on AWS EC2
 
-## 9. Notes / troubleshooting
+The application is deployed on an Ubuntu EC2 instance.
 
-- The image build needs internet access to install Chrome and its matching ChromeDriver. The running container needs internet access to reach Bing and NPR.
-- Search engine layouts and publisher pages can change. If the search engine blocks automated requests, the scraper may return HTTP 502; inspect `docker logs npr-news-api`.
-- Do not hard-code an article URL: the endpoint must search using the keyword each time.
-- The Docker image is built for `linux/amd64`. On an ARM computer, build with `docker build --platform linux/amd64 ...` if your instructor's server expects AMD64.
-- The assignment's example IP is a sample. Use the public IP assigned to your own VM if deploying to a server.
+### Docker Run Command
+
+```bash
+docker run -d --restart unless-stopped --name npr-news-api -p 7000:7000 fatimawaseemdevops/npr-news-api:v1
+```
+
+### EC2 Security Group
+
+Allow inbound traffic on:
+
+* **Type:** Custom TCP
+* **Port:** 7000
+* **Source:** As required for public access and instructor evaluation.
+
+### Public Application URLs
+
+Landing page:
+
+```text
+http://13.62.166.166:7000/
+```
+
+API endpoint:
+
+```text
+http://13.62.166.166:7000/get?keyword=technology
+```
+
+The public IP must be accessible and the EC2 security group must allow inbound TCP traffic on port 7000.
+
+## 9. Testing
+
+The project includes automated tests:
+
+* `tests/test_api_and_scraper.py`
+* `tests/test_summarizer.py`
+
+These tests cover API behavior, scraper-related functionality, and summarization logic.
+
+## 10. Notes and Troubleshooting
+
+* The Docker image requires internet access during the build process to install dependencies, Google Chrome, and ChromeDriver.
+* The running container requires internet access to search NPR and retrieve articles.
+* Selenium uses headless Chrome, so no graphical browser window is required.
+* ChromeDriver is installed to match the Google Chrome version.
+* If the API returns HTTP 502, inspect the container logs:
+
+```bash
+docker logs npr-news-api
+```
+
+* Search results and website layouts may change over time.
+* The Docker image is built for `linux/amd64`.
+
+---
+
+**Student Registration:** FA23-BDS-009
+**Assigned News Source:** NPR
+**Selenium Programming Language:** Python
+**Docker Image:** fatimawaseemdevops/npr-news-api:v1
+**Application Port:** 7000
